@@ -1,5 +1,5 @@
-from tasks import Task, TASK_FIELDS
-from prettytable import PrettyTable
+from tasks import TaskHandler
+from projects import ProjectHandler
 
 class CommandParser():
     """
@@ -10,9 +10,9 @@ class CommandParser():
         task_list (list) the list of issues to be worked with
     """
     
-    def __init__(self, task_list):
-        self.task_list = task_list
-        self.current_task_index = None
+    def __init__(self, data):
+        self.task_handler = TaskHandler(data['tasks'])
+        self.project_handler = ProjectHandler(data['projects'])
         self.mode = 'main'
     
     def get_prompt(self):
@@ -46,95 +46,58 @@ class CommandParser():
         switcher = {}
         
         switcher['main'] = {
-            'd': self.display_all_tasks,
-            'a': self.add_task,
-            'e': self.edit_current_task,
-            'q': self.stop_parsing, 
+            'd': [self.task_handler.display_all_tasks],
+            'a': [self.task_handler.add_task, self.mode_edit],
+            'e': [self.task_handler.edit_current_task],
+            'q': [self.stop_parsing], 
             }
     
-        if type(self.current_task_index) == int:
+        if type(self.task_handler.current_task_index) == int:
             switcher['edit'] = {
-                'd': self.task_list[self.current_task_index].display,
-                'te': 'time_estimate',
-                'q': self.return_to_main,
+                'd': [self.task_handler.display_current_task],
+                'p': ['priority'],
+                'c': ['created'],
+                'dd': ['due'],
+                'bu': ['blocked_until'],
+                'te': ['time_estimate'],
+                'ts': ['time_spent'],
+                'pr': ['projects'],
+                'co': ['contexts'],
+                'q': [self.mode_main],
                 }
         else:
             switcher['edit'] = {}
         
         try:
-            handling_result = switcher[self.mode][initial_command]
+            handling_result_list = switcher[self.mode][initial_command]
         except KeyError:
             print("Command not found") 
-            handling_result = None
+            handling_result_list = []
         
-        if callable(handling_result) and remainder:
-            handling_result(remainder)
-        elif callable(handling_result):
-            handling_result()
-        else:
-            self.modify_attribute_current_task(handling_result,
-                                               remainder)
+        for handling_result in handling_result_list:
+            if callable(handling_result) and remainder:
+                handling_result(remainder)
+                remainder = None
+            elif callable(handling_result):
+                handling_result()
+            else:
+                self.task_handler.modify_attribute_current_task(handling_result,
+                                                                remainder)
 
-    def add_task(self, description):
-        """
-        Parses a single 'add task' command and adds to the list
-        """
-        new_task = Task(description=description)
-        self.task_list.append(new_task)
-        self.current_task_index = -1    
-        self.edit_current_task()
-
-        return
-        
-    def edit_current_task(self):
-        """
-        Displays a task and then parses edit commands for that task
-        """       
-        self.task_list[self.current_task_index].display()
-        self.mode = 'edit'          
-            
-    def return_to_main(self):
+    def mode_main(self):
         """
         Returns the parser to the main mode
         """
         self.mode = 'main'
+        
+    def mode_edit(self):
+        """
+        Switches the parse to edit mode
+        """
+        self.mode = 'edit'
         
     def stop_parsing(self):
         """
         Leaves the parser
         """
         raise StopIteration
-            
-    def display_all_tasks(self):
-        """
-        Outputs a table showing all available tasks, sorted by index
-        
-        Args:
-            all_tasks (list): a list of all tasks to display
-            
-        Returns:
-            None.
-        """
-        table = PrettyTable(['Index'] + TASK_FIELDS)
-           
-        for index, task in enumerate(self.task_list):    
-            table.add_row([index] + task.attributes_as_list())
-            
-        print(table)
-        
-    def modify_attribute_current_task(self, attribute, value):
-        """
-        Sets the attribute on the currently active task to value.
-        
-        Args:
-            attribute (str): a string specifying the attribute 
-                             to modfy
-                             
-            value: the new value
-        
-        Returns:
-            None.
-        """
-        setattr(self.task_list[self.current_task_index],
-                attribute,
-                value)

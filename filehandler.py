@@ -1,4 +1,5 @@
 import pickle
+from collections import defaultdict
 
 class FileHandler():
     """
@@ -25,27 +26,24 @@ class FileHandler():
         try:
             with open(self.filename, 'rb') as infile:
                 file_contents = pickle.load(infile)
-                return file_contents['data']
+                return file_contents
             
         except FileNotFoundError:
             # File doesn't exist, start from scratch
-            return []
+            return defaultdict(list)
         
         except EOFError:
             # File doesn't contain what we're looking for, 
             # start from scratch
-            return []
+            return defaultdict(list)
 
     
-    def write_to_file(self, all_tasks):
+    def write_to_file(self, data):
         """
-        Writes all_tasks to the filename associated with this FileHandler
+        Writes data to the filename associated with this FileHandler
         
         Args:
-            all_tasks (list): the tasks to write out
-        """
-        file_contents = {}
-        file_contents['data'] = all_tasks
-       
+            data (dict): all the data to write to file
+        """      
         with open(self.filename, 'wb') as outfile:
-            pickle.dump(file_contents, outfile)
+            pickle.dump(data, outfile)

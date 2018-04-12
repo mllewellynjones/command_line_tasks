@@ -11,9 +11,9 @@ args = parser.parse_args()
 filename = args.file
 
 fh = FileHandler(filename)
-task_list = fh.parse_file()
+data = fh.parse_file()
 
-cp = CommandParser(task_list)
+cp = CommandParser(data)
 
 while True:
     try:
@@ -22,4 +22,4 @@ while True:
     except StopIteration:
         break
     
-fh.write_to_file(task_list)
+fh.write_to_file(data)
