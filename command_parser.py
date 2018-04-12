@@ -1,5 +1,7 @@
 from tasks import TaskHandler
 from projects import ProjectHandler
+from pip._vendor.html5lib import _inputstream
+from test import test_fileinput, pyclbr_input
 
 class CommandParser():
     """
@@ -46,56 +48,130 @@ class CommandParser():
         switcher = {}
         
         switcher['main'] = {
-            'd': [self.task_handler.display_all_tasks],
-            'a': [self.task_handler.add_task, self.mode_edit],
-            'e': [self.task_handler.edit_current_task],
-            'q': [self.stop_parsing], 
+            'd': self.main_d,
+            'a': self.main_a,
+            'e': self.main_e,
+            'q': self.stop_parsing, 
             }
     
         if type(self.task_handler.current_task_index) == int:
             switcher['edit'] = {
-                'd': [self.task_handler.display_current_task],
-                'p': ['priority'],
-                'c': ['created'],
-                'dd': ['due'],
-                'bu': ['blocked_until'],
-                'te': ['time_estimate'],
-                'ts': ['time_spent'],
-                'pr': ['projects'],
-                'co': ['contexts'],
-                'q': [self.mode_main],
+                'd':  self.edit_d,
+                'p':  self.edit_p,
+                'c':  self.edit_c,
+                'dd': self.edit_dd,
+                'bu': self.edit_bu,
+                'te': self.edit_te,
+                'ts': self.edit_ts,
+                'pr': self.edit_pr,
+                'co': self.edit_co,
+                'q': self.mode_main,
                 }
         else:
             switcher['edit'] = {}
         
         try:
-            handling_result_list = switcher[self.mode][initial_command]
+            handling_result = switcher[self.mode][initial_command]
         except KeyError:
             print("Command not found") 
-            handling_result_list = []
-        
-        for handling_result in handling_result_list:
-            if callable(handling_result) and remainder:
-                handling_result(remainder)
-                remainder = None
-            elif callable(handling_result):
-                handling_result()
-            else:
-                self.task_handler.modify_attribute_current_task(handling_result,
-                                                                remainder)
+            handling_result = None
 
+        handling_result(remainder)
+
+    ############################################################################
+    # Main mode functions
+    ############################################################################
+    def main_a(self, input):
+        """
+        Handles the (a)dd command in the main mode
+        """
+        self.task_handler.add_task(input)
+        self.mode = 'edit'
+        
+    def main_d(self, input):
+        """
+        Handles the (d)isplay command in the main mode
+        """
+        self.task_handler.display_all_tasks()   
+
+    def main_e(self, input):
+        """
+        Handles the (e)dit command in the main mode
+        """
+        self.task_handler.edit_current_task()
+        
+    ############################################################################
+    # Edit mode functions
+    ############################################################################
+    def edit_d(self, input):
+        """
+        Handles the (d)isplay command in the main mode
+        """
+        self.task_handler.display_current_task()
+        
+    def edit_p(self, input):
+        """
+        Sets the (p)riotity on the current task
+        """
+        self.task_handler.modify_attribute_current_task('priority', value)
+
+    def edit_c(self, input):
+        """
+        Sets the (c)reated date/time on the current task
+        """
+        self.task_handler.modify_attribute_current_task('create', value)
+        
+    def edit_p(self, input):
+        """
+        Sets the (p)riotity on the current task
+        """
+        self.task_handler.modify_attribute_current_task('priority', value)
+        
+    def edit_dd(self, input):
+        """
+        Sets the (d)ue (d)ate/time on the current task
+        """
+        self.task_handler.modify_attribute_current_task('due', value)
+        
+    def edit_bu(self, input):
+        """
+        Adds to the (b)locked (u)ntil list on the current task
+        """
+        self.task_handler.modify_attribute_current_task('blocked_until', value)
+        
+    def edit_te(self, input):
+        """
+        Sets the (t)ime (e)stimate on the current task
+        """
+        self.task_handler.modify_attribute_current_task('time_elapsed', value)
+
+    def edit_ts(self, input):
+        """
+        Sets the (t)ime (s)pent on the current task
+        """
+        self.task_handler.modify_attribute_current_task('time_spent', value)
+        
+    def edit_pr(self, input):
+        """
+        Adds to the (pr)ojects list on the current task
+        """
+        self.task_handler.modify_attribute_current_task('projects', value)
+        
+    def edit_co(self, input):
+        """
+        Adds to the (co)ntexts list on the current task
+        """
+        self.task_handler.modify_attribute_current_task('contexts', value)
+        
+    ############################################################################
+    # General functions
+    ############################################################################
     def mode_main(self):
         """
         Returns the parser to the main mode
         """
         self.mode = 'main'
-        
-    def mode_edit(self):
-        """
-        Switches the parse to edit mode
-        """
-        self.mode = 'edit'
-        
+               
     def stop_parsing(self):
         """
         Leaves the parser
