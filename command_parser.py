@@ -1,5 +1,5 @@
 from tasks import TaskHandler
-#from projects import ProjectHandler
+from projects import ProjectHandler
 
 class CommandParser():
     """
@@ -12,7 +12,7 @@ class CommandParser():
     
     def __init__(self, data):
         self.task_handler = TaskHandler(data['tasks'])
-        #self.project_handler = ProjectHandler(data['projects'])
+        self.project_handler = ProjectHandler(data['projects'])
         self.mode = 'main'
     
     def get_prompt(self):
