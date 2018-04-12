@@ -1,7 +1,5 @@
 from tasks import TaskHandler
-from projects import ProjectHandler
-from pip._vendor.html5lib import _inputstream
-from test import test_fileinput, pyclbr_input
+#from projects import ProjectHandler
 
 class CommandParser():
     """
@@ -14,7 +12,7 @@ class CommandParser():
     
     def __init__(self, data):
         self.task_handler = TaskHandler(data['tasks'])
-        self.project_handler = ProjectHandler(data['projects'])
+        #self.project_handler = ProjectHandler(data['projects'])
         self.mode = 'main'
     
     def get_prompt(self):
@@ -72,11 +70,9 @@ class CommandParser():
         
         try:
             handling_result = switcher[self.mode][initial_command]
+            handling_result(remainder)
         except KeyError:
             print("Command not found") 
-            handling_result = None
-
-        handling_result(remainder)
 
     ############################################################################
     # Main mode functions
@@ -113,25 +109,25 @@ class CommandParser():
         """
         Sets the (p)riotity on the current task
         """
-        self.task_handler.modify_attribute_current_task('priority', value)
+        self.task_handler.modify_attribute_current_task('priority', input)
 
     def edit_c(self, input):
         """
         Sets the (c)reated date/time on the current task
         """
-        self.task_handler.modify_attribute_current_task('create', value)
+        self.task_handler.modify_attribute_current_task('create', input)
         
     def edit_p(self, input):
         """
         Sets the (p)riotity on the current task
         """
-        self.task_handler.modify_attribute_current_task('priority', value)
+        self.task_handler.modify_attribute_current_task('priority', input)
         
     def edit_dd(self, input):
         """
         Sets the (d)ue (d)ate/time on the current task
         """
-        self.task_handler.modify_attribute_current_task('due', value)
+        self.task_handler.modify_attribute_current_task('due', input)
         
     def edit_bu(self, input):
         """
@@ -166,13 +162,13 @@ class CommandParser():
     ############################################################################
     # General functions
     ############################################################################
-    def mode_main(self):
+    def mode_main(self, input):
         """
         Returns the parser to the main mode
         """
         self.mode = 'main'
                
-    def stop_parsing(self):
+    def stop_parsing(self, input):
         """
         Leaves the parser
         """
