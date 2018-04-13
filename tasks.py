@@ -4,7 +4,7 @@ from prettytable import PrettyTable
 TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
 
-class TaskHandler():
+class TaskManager():
     """
     A class that handles a list of tasks in aggregate
     
@@ -17,14 +17,12 @@ class TaskHandler():
         
     def add_task(self, description):
         """
-        Parses a single 'add task' command and adds to the list
+        Adds a task to the manager using the description
         """
         new_task = Task(description=description)
         self.task_list.append(new_task)
         self.current_task_index = -1    
-        self.edit_current_task()
-
-        return
+        self.display_current_task()
        
     def display_current_task(self):
         """
@@ -32,24 +30,16 @@ class TaskHandler():
         """
         self.task_list[self.current_task_index].display()
         
-    def edit_current_task(self):
-        """
-        Displays a task and then parses edit commands for that task
-        """       
-        self.display_current_task()
-        self.mode = 'edit'          
-                  
     def display_all_tasks(self, include_closed=False):
         """
         Outputs a table showing all available tasks, sorted by index
         
         Args:
-            all_tasks (list): a list of all tasks to display
+            include_closed (bool): whether to include closed tasks in the output
             
         Returns:
             None.
         """
-        
         if include_closed:
             table = PrettyTable(['Index'] + TASK_FIELDS + ['State'])
                
