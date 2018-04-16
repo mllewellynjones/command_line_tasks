@@ -41,11 +41,11 @@ class CommandParser():
             command (str): the command being parsed
         """
         try:
-            initial_command, remainder = command.split(maxsplit=1)
+            initial_command, arguments = command.split(maxsplit=1)
         except ValueError:
             # Happens when the command can't be split
             initial_command = command
-            remainder = ''
+            arguments = ''
         
         switcher = {}
         
@@ -79,12 +79,12 @@ class CommandParser():
             'da':  self.proj_da,
             'dat': self.proj_dat,
             'q':   self.mode_main,
-            
             }
         
+        continued_command = ""
         try:
             handling_result = switcher[self.mode][initial_command]
-            handling_result(remainder)
+            continued_command = handling_result(arguments)
         except KeyError:
             print("Command not found") 
         except StopIteration:
@@ -92,22 +92,27 @@ class CommandParser():
         except BaseException as err:
             print("That caused an exception: {}".format(err))
             traceback.print_exc(file=sys.stdout)
-            
+        
+        if continued_command:
+            self.breakout(continued_command)
+                
 
     ############################################################################
     # Main mode functions
     ############################################################################
-    def main_p(self, _):
+    def main_p(self, continued_command):
         """
         Handles the (p)roject command in the main mode
         """
         self.mode = 'proj'
+        return continued_command
 
-    def main_t(self, _):
+    def main_t(self, continued_command):
         """
         Handles the (t)ask command in the main mode
         """
         self.mode = 'task'
+        return continued_command
 
     ############################################################################
     # Task mode functions
@@ -125,11 +130,12 @@ class CommandParser():
         self.task_manager.modify_attribute_current_task('blocked_until',
                                                         command_input)
 
-    def task_c(self, _):
+    def task_c(self, continued_command):
         """
         Sets the state of the current task to (c)losed
         """
         self.task_manager.modify_attribute_current_task('state', 'closed')
+        return continued_command
     
     def task_cr(self, command_input):
         """
@@ -144,17 +150,19 @@ class CommandParser():
         self.task_manager.modify_attribute_current_task('contexts',
                                                         command_input)
     
-    def task_d(self, _):
+    def task_d(self, continued_command):
         """
         Handles the (d)isplay command in the task mode
         """
         self.task_manager.display_current_task()
+        return continued_command
         
-    def task_da(self, _):
+    def task_da(self, continued_command):
         """
         Handles the (d)isplay (a)ll command in the task mode
         """
         self.task_manager.display_all_tasks()
+        return continued_command
 
     def task_dd(self, command_input):
         """
@@ -162,11 +170,12 @@ class CommandParser():
         """
         self.task_manager.modify_attribute_current_task('due', command_input)
 
-    def task_e(self, _):
+    def task_e(self, continued_command):
         """
         Handles the (e)dit command in the task mode
         """
         self.task_manager.edit_current_task()
+        return continued_command
 
     def task_p(self, command_input):
         """
@@ -205,40 +214,45 @@ class CommandParser():
         """
         self.project_manager.add_project(command_input)
         
-    def proj_d(self, _):
+    def proj_d(self, continued_command):
         """
         Handles the (d)isplay command in project mode
         """
         self.project_manager.display_current_project()
+        return continued_command
         
-    def proj_dt(self, _):
+    def proj_dt(self, continued_command):
         """
         Handles the (d)isplay with (t)asks command in project mode
         """
-        self.project_manager.display_current_project(with_tasks=True)      
+        self.project_manager.display_current_project(with_tasks=True)   
+        return continued_command   
         
-    def proj_da(self, _):
+    def proj_da(self, continued_command):
         """
         Handles the (d)isplay (a)ll command in project mode
         """
         self.project_manager.display_all_projects()
+        return continued_command
         
-    def proj_dat(self, _):
+    def proj_dat(self, continued_command):
         """
         Handles the (d)isplay (a)ll with (t)asks command in project mode
         """
         self.project_manager.display_all_projects(with_tasks=True)
+        return continued_command
         
     ############################################################################
     # General functions
     ############################################################################
-    def mode_main(self, _):
+    def mode_main(self, continued_command):
         """
         Returns the parser to the main mode
         """
         self.mode = 'main'
+        return continued_command
                
-    def stop_parsing(self, command_input):
+    def stop_parsing(self, _):
         """
         Leaves the parser
         """
