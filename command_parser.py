@@ -16,12 +16,12 @@ class CommandParser():
     def __init__(self):
         self.task_command_handler = TaskCommandHandler()
         self.project_command_handler = ProjectCommandHandler()
-        self.inbox_command_handler = InboxCommandHandler()
+        self.inbox_command_handler = InboxCommandHandler(self)
         
         # Sort out dependencies
         self.project_command_handler.set_task_manager_on_project_manager(
             self.task_command_handler.get_task_manager())
-        
+               
         self.mode = 'main'
     
     def get_prompt(self):
@@ -101,42 +101,56 @@ class CommandParser():
         remaining_command = current_handler.handle_command(command)
         
         return remaining_command
-        
+    
+    def get_current_mode(self):
+        """
+        Returns the current mode of this command handler
+        """
+        return self.mode
+    
+    def set_mode(self, new_mode):
+        """
+        Sets the current mode of this command handler
+        """
+        self.mode = new_mode
+
 
     ############################################################################
-    # Main mode functions
+    # Main commands
     ############################################################################
-    def switch_to_project_mode(self, remaining_command):
+    def switch_to_project_mode(self, remaining_command=''):
         """
         Switches into project mode
         """
         self.mode = 'proj'
         return remaining_command
 
-    def switch_to_task_mode(self, remaining_command):
+    def switch_to_task_mode(self, remaining_command=''):
         """
         Switch into task mode
         """
         self.mode = 'task'
         return remaining_command
     
-    def switch_to_inbox_mode(self, remaining_command):
+    def switch_to_inbox_mode(self, remaining_command=''):
         """
         Switch into inbox mode
         """
         self.mode = 'inbox'
         return remaining_command    
 
-    def switch_to_main_mode(self, remaining_command):
+    def switch_to_main_mode(self, remaining_command=''):
         """
         Switch into main mode
         """
         self.mode = 'main'
         return remaining_command
                
-    def exit_program(self, _):
+    def exit_program(self, remaining_command=''):
         """
         Shuts down the program
         """
+        self.task_command_handler.close()
+        self.project_command_handler.close()
         self.inbox_command_handler.close()
         raise StopIteration

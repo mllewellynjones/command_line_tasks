@@ -1,5 +1,5 @@
 Getting to the MVP
-- Inbox (text file in Dropbox)
+x Inbox (text file in Dropbox)
 - Subtasks and sub-projects
 - The ability to close tasks/projects from the command line
 - Filters

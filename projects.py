@@ -32,6 +32,12 @@ class ProjectCommandHandler(BaseCommandHandler):
         Assigns a task manager to this project manager
         """
         self.project_manager.task_manager = task_manager
+        
+    def close(self):
+        """
+        Close the project manager, for when the program exits
+        """
+        self.project_manager.close()
 
     ############################################################################
     # Project commands
@@ -147,6 +153,12 @@ class ProjectManager():
                               [project.state])            
         
         print(table)
+        
+    def close(self):
+        """
+        Closes the project manager by writing the current state to file
+        """
+        self.filehandler.write_to_file(self.project_list)
 
 
 class Project():

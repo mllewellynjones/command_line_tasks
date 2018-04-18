@@ -4,10 +4,10 @@ from prettytable import PrettyTable
 from filehandler import FileHandler
 from base import BaseCommandHandler
 
-TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked',
+TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked Behind',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
 
-class TaskCommandHandler():
+class TaskCommandHandler(BaseCommandHandler):
     """
     Handles commands related to tasks, primarily by invoking the Task Manager
     
@@ -46,6 +46,12 @@ class TaskCommandHandler():
             TaskManager(), or None.
         """
         return self.task_manager
+    
+    def close(self):
+        """
+        Close the task manager, for when the program exits
+        """
+        self.task_manager.close()
         
     ############################################################################
     # Task commands
@@ -54,7 +60,6 @@ class TaskCommandHandler():
         """
         Add a new task to the task manager
         """
-        print(details)
         self.task_manager.add_task(details)
         return None
     
@@ -209,6 +214,12 @@ class TaskManager():
         setattr(self.task_list[self.current_task_index],
                 attribute,
                 value)       
+        
+    def close(self):
+        """
+        Closes the task manager by writing the current state to file
+        """
+        self.filehandler.write_to_file(self.task_list)
         
 
 class Task():
