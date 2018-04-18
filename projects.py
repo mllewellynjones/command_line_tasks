@@ -1,8 +1,75 @@
 from prettytable import PrettyTable
+from config import config
 from tasks import TASK_FIELDS
+from filehandler import FileHandler
+from base import BaseCommandHandler
 
 PROJECT_FIELDS = ['Description', 'Notes']
 
+class ProjectCommandHandler(BaseCommandHandler):
+    """
+    Handles commands related to projects, primarily by invoking the Project
+    Manager.
+    
+    Args:
+        None.
+        
+    Returns:
+        None.
+    """
+    def __init__(self):
+        self.project_manager = ProjectManager()
+        self.switcher = {
+            'a':   self.add_new,
+            'd':   self.display_current_project,
+            'dt':  self.display_current_project_with_tasks,
+            'da':  self.display_all,
+            'dat': self.display_all_with_tasks,                
+            }
+
+    def set_task_manager_on_project_manager(self, task_manager):
+        """
+        Assigns a task manager to this project manager
+        """
+        self.project_manager.task_manager = task_manager
+
+    ############################################################################
+    # Project commands
+    ############################################################################
+    def add_new(self, details):
+        """
+        Add a new project to the project manager
+        """
+        self.project_manager.add_project(details)
+        
+    def display_current_project(self, remaining_command):
+        """
+        Displays the current project
+        """
+        self.project_manager.display_current_project()
+        return remaining_command
+        
+    def display_current_project_with_tasks(self, remaining_command):
+        """
+        Displays the current project with tasks
+        """
+        self.project_manager.display_current_project(with_tasks=True)   
+        return remaining_command
+        
+    def display_all(self, remaining_command):
+        """
+        Display all projects in the project manager
+        """
+        self.project_manager.display_all_projects()
+        return remaining_command
+        
+    def display_all_with_tasks(self, remaining_command):
+        """
+        Displays all projects in the project manager with tasks
+        """
+        self.project_manager.display_all_projects(with_tasks=True)
+        return remaining_command
+        
 
 class ProjectManager():
     """
@@ -11,12 +78,9 @@ class ProjectManager():
     Args:
         project_list (list): a list of all the current projects
     """
-    def __init__(self, project_list=None, task_manager=None):
-        if project_list:
-            self.project_list = project_list
-        else:
-            self.project_list =[]
-            
+    def __init__(self, task_manager=None):
+        self.filehandler = FileHandler(config.project_file) 
+        self.project_list = self.filehandler.parse_file()
         self.current_project_index = None
         
         # It is possible for the project manager to perform some basic function 
@@ -83,6 +147,7 @@ class ProjectManager():
                               [project.state])            
         
         print(table)
+
 
 class Project():
     """

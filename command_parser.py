@@ -1,7 +1,8 @@
 import sys
 import traceback
-from tasks import TaskManager
-from projects import ProjectManager
+from tasks import TaskCommandHandler
+from projects import ProjectCommandHandler
+from inbox import InboxCommandHandler
 
 class CommandParser():
     """
@@ -12,10 +13,15 @@ class CommandParser():
         task_list (list) the list of issues to be worked with
     """
     
-    def __init__(self, data):
-        self.task_manager = TaskManager(data['tasks'])
-        self.project_manager = ProjectManager(data['projects'],
-                                              self.task_manager)
+    def __init__(self):
+        self.task_command_handler = TaskCommandHandler()
+        self.project_command_handler = ProjectCommandHandler()
+        self.inbox_command_handler = InboxCommandHandler()
+        
+        # Sort out dependencies
+        self.project_command_handler.set_task_manager_on_project_manager(
+            self.task_command_handler.get_task_manager())
+        
         self.mode = 'main'
     
     def get_prompt(self):
@@ -29,6 +35,7 @@ class CommandParser():
             'main': '>>',
             'task': 't>',
             'proj': 'p>',
+            'inbox': 'i>',
             }
             
         return (prompts[self.mode] + ' ')
@@ -47,44 +54,21 @@ class CommandParser():
             initial_command = command
             arguments = ''
         
-        switcher = {}
-        
-        switcher['main'] = {
-            'p': self.main_p,
-            'q': self.stop_parsing,
-            't': self.main_t,
-            }
-    
-        switcher['task'] = {
-            'a':  self.task_a,
-            'bu': self.task_bu,
-            'c':  self.task_c,
-            'co': self.task_co,
-            'cr': self.task_c,
-            'd':  self.task_d,
-            'da': self.task_da,
-            'dd': self.task_dd,
-            'e':  self.task_e,
-            'p':  self.task_p,
-            'pr': self.task_pr,             
-            'te': self.task_te,
-            'ts': self.task_ts,
-            'q':  self.mode_main,
-            }
-        
-        switcher['proj'] = {
-            'a':   self.proj_a,
-            'd':   self.proj_d,
-            'dt':  self.proj_dt,
-            'da':  self.proj_da,
-            'dat': self.proj_dat,
-            'q':   self.mode_main,
+        SWITCHER = {
+            'p': self.switch_to_project_mode,
+            'q': self.exit_program,
+            't': self.switch_to_task_mode,
+            'i': self.switch_to_inbox_mode,
+            'm': self.switch_to_main_mode,
             }
         
         continued_command = ""
         try:
-            handling_result = switcher[self.mode][initial_command]
-            continued_command = handling_result(arguments)
+            if self.mode == 'main' or initial_command == 'm':
+                handling_result = SWITCHER[initial_command]
+                continued_command = handling_result(arguments)
+            else:
+                continued_command = self.dispatch_to_command_handler(command)
         except KeyError:
             print("Command not found") 
         except StopIteration:
@@ -96,164 +80,63 @@ class CommandParser():
         if continued_command:
             self.breakout(continued_command)
                 
+    def dispatch_to_command_handler(self, command):
+        """
+        Finds the appropriate command handler given the mode and sends the 
+        command to that handler
+        
+        Args:
+            command (str): the command to dispatch
+            
+        Returns:
+            str: any remaining command that was not consumed by the handler
+        """
+        handler_dict = {
+            'task': self.task_command_handler,
+            'proj': self.project_command_handler,
+            'inbox': self.inbox_command_handler,
+            }
+        
+        current_handler = handler_dict[self.mode]
+        remaining_command = current_handler.handle_command(command)
+        
+        return remaining_command
+        
 
     ############################################################################
     # Main mode functions
     ############################################################################
-    def main_p(self, continued_command):
+    def switch_to_project_mode(self, remaining_command):
         """
-        Handles the (p)roject command in the main mode
+        Switches into project mode
         """
         self.mode = 'proj'
-        return continued_command
+        return remaining_command
 
-    def main_t(self, continued_command):
+    def switch_to_task_mode(self, remaining_command):
         """
-        Handles the (t)ask command in the main mode
+        Switch into task mode
         """
         self.mode = 'task'
-        return continued_command
-
-    ############################################################################
-    # Task mode functions
-    ############################################################################
-    def task_a(self, command_input):
-        """
-        Handles the (a)dd command in the task mode
-        """
-        self.task_manager.add_task(command_input)
+        return remaining_command
     
-    def task_bu(self, command_input):
+    def switch_to_inbox_mode(self, remaining_command):
         """
-        Adds to the (b)locked (u)ntil list on the current task
+        Switch into inbox mode
         """
-        self.task_manager.modify_attribute_current_task('blocked_until',
-                                                        command_input)
+        self.mode = 'inbox'
+        return remaining_command    
 
-    def task_c(self, continued_command):
+    def switch_to_main_mode(self, remaining_command):
         """
-        Sets the state of the current task to (c)losed
-        """
-        self.task_manager.modify_attribute_current_task('state', 'closed')
-        return continued_command
-    
-    def task_cr(self, command_input):
-        """
-        Sets the (cr)eated date/time on the current task
-        """
-        self.task_manager.modify_attribute_current_task('create', command_input)       
-
-    def task_co(self, command_input):
-        """
-        Adds to the (co)ntexts list on the current task
-        """
-        self.task_manager.modify_attribute_current_task('contexts',
-                                                        command_input)
-    
-    def task_d(self, continued_command):
-        """
-        Handles the (d)isplay command in the task mode
-        """
-        self.task_manager.display_current_task()
-        return continued_command
-        
-    def task_da(self, continued_command):
-        """
-        Handles the (d)isplay (a)ll command in the task mode
-        """
-        self.task_manager.display_all_tasks()
-        return continued_command
-
-    def task_dd(self, command_input):
-        """
-        Sets the (d)ue (d)ate/time on the current task
-        """
-        self.task_manager.modify_attribute_current_task('due', command_input)
-
-    def task_e(self, continued_command):
-        """
-        Handles the (e)dit command in the task mode
-        """
-        self.task_manager.edit_current_task()
-        return continued_command
-
-    def task_p(self, command_input):
-        """
-        Sets the (p)riotity on the current task
-        """
-        self.task_manager.modify_attribute_current_task('priority', 
-                                                        command_input)
-
-    def task_pr(self, command_input):
-        """
-        Adds to the (pr)ojects list on the current task
-        """
-        self.task_manager.modify_attribute_current_task('projects',
-                                                        command_input)
-                      
-    def task_te(self, command_input):
-        """
-        Sets the (t)ime (e)stimate on the current task
-        """
-        self.task_manager.modify_attribute_current_task('time_elapsed',
-                                                        command_input)
-
-    def task_ts(self, command_input):
-        """
-        Sets the (t)ime (s)pent on the current task
-        """
-        self.task_manager.modify_attribute_current_task('time_spent', 
-                                                        command_input)
-        
-    ############################################################################
-    # Project mode functions
-    ############################################################################
-    def proj_a(self, command_input):
-        """
-        Handles the (a)dd command in project mode
-        """
-        self.project_manager.add_project(command_input)
-        
-    def proj_d(self, continued_command):
-        """
-        Handles the (d)isplay command in project mode
-        """
-        self.project_manager.display_current_project()
-        return continued_command
-        
-    def proj_dt(self, continued_command):
-        """
-        Handles the (d)isplay with (t)asks command in project mode
-        """
-        self.project_manager.display_current_project(with_tasks=True)   
-        return continued_command   
-        
-    def proj_da(self, continued_command):
-        """
-        Handles the (d)isplay (a)ll command in project mode
-        """
-        self.project_manager.display_all_projects()
-        return continued_command
-        
-    def proj_dat(self, continued_command):
-        """
-        Handles the (d)isplay (a)ll with (t)asks command in project mode
-        """
-        self.project_manager.display_all_projects(with_tasks=True)
-        return continued_command
-        
-    ############################################################################
-    # General functions
-    ############################################################################
-    def mode_main(self, continued_command):
-        """
-        Returns the parser to the main mode
+        Switch into main mode
         """
         self.mode = 'main'
-        return continued_command
+        return remaining_command
                
-    def stop_parsing(self, _):
+    def exit_program(self, _):
         """
-        Leaves the parser
+        Shuts down the program
         """
+        self.inbox_command_handler.close()
         raise StopIteration

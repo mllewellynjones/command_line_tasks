@@ -1,8 +1,146 @@
+from config import config
 from datetime import datetime
 from prettytable import PrettyTable
+from filehandler import FileHandler
+from base import BaseCommandHandler
 
 TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
+
+class TaskCommandHandler():
+    """
+    Handles commands related to tasks, primarily by invoking the Task Manager
+    
+    Args:
+        None.
+        
+    Returns:
+        None.
+    """
+    def __init__(self):
+        self.task_manager = TaskManager()
+        self.switcher = {
+            'a':  self.add_new,
+            'bu': self.add_to_contexts_current_task,
+            'c':  self.set_closed_current_task,
+            'co': self.add_to_contexts_current_task,
+            'cr': self.set_created_current_task,
+            'd':  self.display_current_task,
+            'da': self.display_all,
+            'dd': self.set_due_date_current_task,
+            'e':  self.edit_current_task,
+            'p':  self.set_priority_current_task,
+            'pr': self.add_to_projects_current_task,             
+            'te': self.set_time_estimate_current_task,
+            'ts': self.set_time_spent_current_task,
+            }
+               
+    def get_task_manager(self):
+        """
+        Returns the task manager associated with this task command handler
+        
+        Args:
+            None.
+            
+        Returns:
+            TaskManager(), or None.
+        """
+        return self.task_manager
+        
+    ############################################################################
+    # Task commands
+    ############################################################################
+    def add_new(self, details):
+        """
+        Add a new task to the task manager
+        """
+        print(details)
+        self.task_manager.add_task(details)
+        return None
+    
+    def add_to_blocked_until_current_task(self, new_blocked_until):
+        """
+        Adds to the blocked until list on the current task
+        """
+        self.task_manager.modify_attribute_current_task('blocked_until',
+                                                        new_blocked_until)
+        return None
+
+    def set_closed_current_task(self, remaining_command):
+        """
+        Sets the state of the current task to closed
+        """
+        self.task_manager.modify_attribute_current_task('state', 'closed')
+        return remaining_command
+    
+    def set_created_current_task(self, new_created):
+        """
+        Sets the created date/time on the current task
+        """
+        self.task_manager.modify_attribute_current_task('create', new_created)       
+        return None
+
+    def add_to_contexts_current_task(self, new_context):
+        """
+        Adds to the contexts list on the current task
+        """
+        self.task_manager.modify_attribute_current_task('contexts',
+                                                        new_context)
+    
+    def display_current_task(self, remaining_command):
+        """
+        Displays the current task
+        """
+        self.task_manager.display_current_task()
+        return remaining_command
+        
+    def display_all(self, remaining_command):
+        """
+        Displays all tasks in the task manager
+        """
+        self.task_manager.display_all_tasks()
+        return remaining_command
+
+    def set_due_date_current_task(self, new_due_date):
+        """
+        Sets the due date/time on the current task
+        """
+        self.task_manager.modify_attribute_current_task('due', new_due_date)
+
+    def edit_current_task(self, remaining_command):
+        """
+        Edit the current command
+        """
+        self.task_manager.edit_current_task()
+        return remaining_command
+
+    def set_priority_current_task(self, new_priority):
+        """
+        Sets the priority on the current task
+        """
+        self.task_manager.modify_attribute_current_task('priority', 
+                                                        new_priority)
+
+    def add_to_projects_current_task(self, new_project):
+        """
+        Adds to the projects list on the current task
+        """
+        self.task_manager.modify_attribute_current_task('projects',
+                                                        new_project)
+                      
+    def set_time_estimate_current_task(self, time_estimate):
+        """
+        Sets the time estimate on the current task
+        """
+        self.task_manager.modify_attribute_current_task('time_estimate',
+                                                        time_estimate)
+
+    def set_time_spent_current_task(self, time_spent):
+        """
+        Sets the time spent on the current task
+        """
+        self.task_manager.modify_attribute_current_task('time_spent', 
+                                                        time_spent)    
 
 class TaskManager():
     """
@@ -11,8 +149,9 @@ class TaskManager():
     Args:
         task_list (list): a list of all the current tasks
     """
-    def __init__(self, task_list):
-        self.task_list = task_list
+    def __init__(self):
+        self.filehandler = FileHandler(config.task_file)
+        self.task_list = self.filehandler.parse_file()
         self.current_task_index = None
         
     def add_task(self, description):
@@ -254,6 +393,10 @@ class Task():
     @property
     def time_spent(self):
         return str(self._time_spent)
+    
+    @time_spent.setter
+    def time_spent(self, value):
+        self._time_spent = value
 
     ############################################################################    
     # Projects
