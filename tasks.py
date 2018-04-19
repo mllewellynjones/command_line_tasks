@@ -3,6 +3,8 @@ from datetime import datetime
 from prettytable import PrettyTable
 from filehandler import FileHandler
 from base import BaseCommandHandler
+from utilities import generate_unique_id
+from collections import defaultdict
 
 TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked Behind',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
@@ -147,6 +149,15 @@ class TaskCommandHandler(BaseCommandHandler):
         self.task_manager.modify_attribute_current_task('time_spent', 
                                                         time_spent)    
 
+    def add_subtasks_current_task(self, subtask_index):
+        """
+        Adds the task with specified index as a subtask of the current 
+        task
+        """
+        self.task_manager.modify_attribute_current_task('subtasks',
+            self.task_manager.return_task_with_index(subtask_index).unique_id)
+
+
 class TaskManager():
     """
     A class that handles a list of tasks in aggregate
@@ -213,14 +224,20 @@ class TaskManager():
         """
         setattr(self.task_list[self.current_task_index],
                 attribute,
-                value)       
+                value)    
+        
+    def return_task_with_index(self, index):  
+        """
+        Returns the task with the specified index
+        """
+        return self.task_list[index]  
         
     def close(self):
         """
         Closes the task manager by writing the current state to file
         """
         self.filehandler.write_to_file(self.task_list)
-        
+
 
 class Task():
     """
@@ -280,6 +297,10 @@ class Task():
             self._contexts = contexts
             
         self._state = state
+        
+        self._unique_id = generate_unique_id(description)
+        
+        self._subtasks = defaultdict()
             
     @staticmethod
     def date_as_string(date_object):
@@ -456,6 +477,31 @@ class Task():
     def state(self, value):
         if value in ['open', 'closed']:
             self._state = value
+
+    ############################################################################    
+    # Unique ID
+    ############################################################################
+    @property
+    def unique_id(self):
+        return self._unique_id
+    
+    ############################################################################    
+    # Subtasks
+    ############################################################################
+    @property
+    def subtasks(self):
+        return self.list_as_string(self._subtasks)
+    
+    @subtasks.setter
+    def subtasks(self, value):
+        if type(value) == list:
+            self._subtasks.extend(value)
+        else:
+            self._subtasks.append(value)      
+            
+    def remove_subtask(self, value):
+        if value in self._subtasks:
+            self._subtasks.remove(value)
 
     ############################################################################    
 
