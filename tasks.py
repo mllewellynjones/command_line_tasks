@@ -4,7 +4,6 @@ from prettytable import PrettyTable
 from filehandler import FileHandler
 from base import BaseCommandHandler
 from utilities import generate_unique_id
-from collections import defaultdict
 
 TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked Behind',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
@@ -35,6 +34,8 @@ class TaskCommandHandler(BaseCommandHandler):
             'pr': self.add_to_projects_current_task,             
             'te': self.set_time_estimate_current_task,
             'ts': self.set_time_spent_current_task,
+            'ms': self.make_subtask_of_current_task,
+            'sc': self.set_current_task,
             }
                
     def get_task_manager(self):
@@ -149,13 +150,19 @@ class TaskCommandHandler(BaseCommandHandler):
         self.task_manager.modify_attribute_current_task('time_spent', 
                                                         time_spent)    
 
-    def add_subtasks_current_task(self, subtask_index):
+    def make_subtask_of_current_task(self, subtask_index):
         """
         Adds the task with specified index as a subtask of the current 
         task
         """
         self.task_manager.modify_attribute_current_task('subtasks',
             self.task_manager.return_task_with_index(subtask_index).unique_id)
+        
+    def set_current_task(self, index):
+        """
+        Sets the current task to the index specified
+        """
+        self.task_manager.set_current_task(index)
 
 
 class TaskManager():
@@ -168,7 +175,7 @@ class TaskManager():
     def __init__(self):
         self.filehandler = FileHandler(config.task_file)
         self.task_list = self.filehandler.parse_file()
-        self.current_task_index = None
+        self.current_task_index = 0
         
     def add_task(self, description):
         """
@@ -230,7 +237,13 @@ class TaskManager():
         """
         Returns the task with the specified index
         """
-        return self.task_list[index]  
+        return self.task_list[int(index)]  
+    
+    def set_current_task(self, index):
+        """
+        Sets the current task index
+        """
+        self.current_task_index = index
         
     def close(self):
         """
@@ -298,9 +311,9 @@ class Task():
             
         self._state = state
         
-        self._unique_id = generate_unique_id(description)
+        self._unique_id = generate_unique_id()
         
-        self._subtasks = defaultdict()
+        self._subtasks = []
             
     @staticmethod
     def date_as_string(date_object):
@@ -349,8 +362,7 @@ class Task():
         
         for dt_format in datetime_formats:
             try:
-                value = datetime.strptime(datetime_string, dt_format)
-                return value
+                return datetime.strptime(datetime_string, dt_format)
             except ValueError:
                 continue
                 

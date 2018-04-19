@@ -1,11 +1,11 @@
 import uuid
 
-def generate_unique_id(text):
+def generate_unique_id():
     """
-    Generates a unique ID from a string
+    Generates a unique ID
     
     Args:
-        text (str): the input string to use when forming the unique ID
+        None.
     
     Returns:
         str: the unique identifier as a string
