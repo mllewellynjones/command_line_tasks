@@ -5,6 +5,8 @@ from filehandler import FileHandler
 from base import BaseCommandHandler
 from utilities import generate_unique_id
 
+MAX_DEPTH = 30
+
 TASK_FIELDS = ['Description', 'Priority', 'Created', 'Due', 'Blocked Behind',
                'Time estimate', 'Time Spent', 'Projects', 'Contexts']
 
@@ -37,7 +39,7 @@ class TaskCommandHandler(BaseCommandHandler):
             'ms': self.make_subtask_of_current_task,
             'sc': self.set_current_task,
             }
-               
+                             
     def get_task_manager(self):
         """
         Returns the task manager associated with this task command handler
@@ -183,14 +185,58 @@ class TaskManager():
         """
         new_task = Task(description=description)
         self.task_list.append(new_task)
-        self.current_task_index = -1    
+        self.current_task_index = len(self.task_list) - 1    
         self.display_current_task()
+       
+    def display_task_by_index(self, task_index):
+        """
+        Displays a given task, along with all subtasks
+        """
+        table = PrettyTable(['Index'] + TASK_FIELDS)
+        table.align['Index'] = "l"
+        
+        task = self.return_task_with_index(task_index)
+        table.add_row([task_index] + task.attributes_as_list())
+        
+        self.__add_subtasks_to_table(str(task_index), task.subtasks, table)       
+        print(table)
+            
+    def __add_subtasks_to_table(self, index_prefix, unique_id_string, table):
+        """
+        Adds the tasks on the unique_id_string (a comma separated list) to the
+        table, recursively allowing the presentation of subtasks
+        """
+        if unique_id_string == 'None':
+            return
+        
+        unique_id_list = unique_id_string.split(',')
+        
+        for unique_id in unique_id_list:
+            task_index = self.return_index_for_unique_id(unique_id)
+            task = self.return_task_with_index(task_index)
+            
+            table.add_row([index_prefix + "-" + str(task_index)]
+                          + task.attributes_as_list())
+                          
+            self.__add_subtasks_to_table(index_prefix + "-"
+                                         + str(task_index),
+                                         task.subtasks, table)
+        
+    def return_index_for_unique_id(self, unique_id):    
+        """
+        Finds the current index of the task with the specified unique ID
+        """
+        for task_index, task in enumerate(self.task_list):
+            if task.unique_id == unique_id:
+                return task_index
+
+        return None
        
     def display_current_task(self):
         """
         Displays the current task
         """
-        self.task_list[self.current_task_index].display()
+        self.display_task_by_index(self.current_task_index)
         
     def display_all_tasks(self, include_closed=False):
         """
@@ -222,7 +268,7 @@ class TaskManager():
         
         Args:
             attribute (str): a string specifying the attribute 
-                             to modfy
+                             to modify
                              
             value: the new value
         
@@ -243,7 +289,7 @@ class TaskManager():
         """
         Sets the current task index
         """
-        self.current_task_index = index
+        self.current_task_index = int(index)
         
     def close(self):
         """
@@ -532,7 +578,7 @@ class Task():
                 self.projects,
                 self.contexts]
 
-    def display(self):
+    def display(self, index=None):
         """
         Prints a task to the screen in a human readable format.
         
@@ -542,7 +588,11 @@ class Task():
         Returns:
             None.
         """
-        table = PrettyTable(TASK_FIELDS)
-        table.add_row(self.attributes_as_list())
+        if index == None:
+            table = PrettyTable(TASK_FIELDS)
+            table.add_row(self.attributes_as_list())            
+        else:
+            table = PrettyTable(['Index'] + TASK_FIELDS)
+            table.add_row([str(index)] + self.attributes_as_list())
         print(table)
 

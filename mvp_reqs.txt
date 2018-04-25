@@ -1,5 +1,4 @@
-Getting to the MVP
-x Inbox (text file in Dropbox)
+etting to the MVP
 - Subtasks and sub-projects
 - The ability to close tasks/projects from the command line
 - Filters
