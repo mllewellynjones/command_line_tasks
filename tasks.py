@@ -207,7 +207,7 @@ class TaskManager():
         table, recursively allowing the presentation of subtasks
         """
         if unique_id_string == 'None':
-            return
+            return None
         
         unique_id_list = unique_id_string.split(',')
         
@@ -215,12 +215,17 @@ class TaskManager():
             task_index = self.return_index_for_unique_id(unique_id)
             task = self.return_task_with_index(task_index)
             
+            if task.state == 'closed':
+                continue
+            
             table.add_row([index_prefix + "-" + str(task_index)]
                           + task.attributes_as_list())
                           
             self.__add_subtasks_to_table(index_prefix + "-"
                                          + str(task_index),
                                          task.subtasks, table)
+            
+        return None
         
     def return_index_for_unique_id(self, unique_id):    
         """
@@ -238,30 +243,38 @@ class TaskManager():
         """
         self.display_task_by_index(self.current_task_index)
         
-    def display_all_tasks(self, include_closed=False):
+    def display_all_tasks(self):
         """
         Outputs a table showing all available tasks, sorted by index
         
         Args:
-            include_closed (bool): whether to include closed tasks in the output
+            None.
             
         Returns:
             None.
         """
-        if include_closed:
-            table = PrettyTable(['Index'] + TASK_FIELDS + ['State'])
-               
-            for index, task in enumerate(self.task_list):    
-                table.add_row([index] + task.attributes_as_list()
-                              + [task.state])
-        else:
-            table = PrettyTable(['Index'] + TASK_FIELDS)
-               
-            for index, task in enumerate(self.task_list):    
-                table.add_row([index] + task.attributes_as_list())
-            
-        print(table)
+        index_list = []
         
+        for index, task in enumerate(self.task_list):
+            if task.state != 'closed':
+                index_list.append(index)
+        
+        self.display_list_of_tasks_by_index(index_list)
+                    
+    def display_list_of_tasks_by_index(self, index_list):
+        """
+        Displays the tasks with the indices specified by the list
+        
+        Args:
+            index_list (list): a list of task indices to display
+            
+        Returns:
+            None.
+        """
+        for index, _ in enumerate(self.task_list):
+            if index in index_list:
+                self.display_task_by_index(index)
+
     def modify_attribute_current_task(self, attribute, value):
         """
         Sets the attribute on the currently active task to value.
@@ -290,6 +303,26 @@ class TaskManager():
         Sets the current task index
         """
         self.current_task_index = int(index)
+        
+    def filter(self, only_active=True):
+        """
+        Returns a filtered list of task indices
+        
+        Args:
+            only_active (bool): only return those tasks which aren't blocked
+            
+        Returns:
+            None.
+        """     
+        filtered_index_list = []
+        
+        for index, task in enumerate(self.task_list):
+            if (task.blocked_until == 'None'
+                and task.state != 'closed'
+                ):
+                filtered_index_list.append(index)
+                
+        return filtered_index_list
         
     def close(self):
         """
@@ -529,7 +562,7 @@ class Task():
     ############################################################################
     @property
     def state(self):
-        return self.state
+        return self._state
         
     @state.setter
     def state(self, value):
@@ -594,5 +627,6 @@ class Task():
         else:
             table = PrettyTable(['Index'] + TASK_FIELDS)
             table.add_row([str(index)] + self.attributes_as_list())
+
         print(table)
 

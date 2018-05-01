@@ -29,9 +29,21 @@ class ProjectCommandHandler(BaseCommandHandler):
 
     def set_task_manager_on_project_manager(self, task_manager):
         """
-        Assigns a task manager to this project manager
+        Assigns a task manager to the project manager
         """
         self.project_manager.task_manager = task_manager
+
+    def get_project_manager(self):
+        """
+        Returns the project manager associated with this project command handler
+        
+        Args:
+            None.
+            
+        Returns:
+            ProjectManager(), or None.
+        """
+        return self.project_manager
         
     def close(self):
         """

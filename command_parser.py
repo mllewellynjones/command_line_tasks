@@ -3,6 +3,7 @@ import traceback
 from tasks import TaskCommandHandler
 from projects import ProjectCommandHandler
 from inbox import InboxCommandHandler
+from filter import FilterCommandHandler
 
 class CommandParser():
     """
@@ -17,6 +18,10 @@ class CommandParser():
         self.task_command_handler = TaskCommandHandler()
         self.project_command_handler = ProjectCommandHandler()
         self.inbox_command_handler = InboxCommandHandler(self)
+        self.filter_command_handler = FilterCommandHandler(
+            self.task_command_handler.get_task_manager(),
+            self.project_command_handler.get_project_manager()
+            )
         
         # Sort out dependencies
         self.project_command_handler.set_task_manager_on_project_manager(
@@ -36,6 +41,7 @@ class CommandParser():
             'task': 't>',
             'proj': 'p>',
             'inbox': 'i>',
+            'filt': 'f>',
             }
             
         return (prompts[self.mode] + ' ')
@@ -53,13 +59,14 @@ class CommandParser():
             # Happens when the command can't be split
             initial_command = command
             arguments = ''
-        
+            
         SWITCHER = {
             'p': self.switch_to_project_mode,
             'q': self.exit_program,
             't': self.switch_to_task_mode,
             'i': self.switch_to_inbox_mode,
             'm': self.switch_to_main_mode,
+            'f': self.switch_to_filter_mode,
             }
         
         continued_command = ""
@@ -95,6 +102,7 @@ class CommandParser():
             'task': self.task_command_handler,
             'proj': self.project_command_handler,
             'inbox': self.inbox_command_handler,
+            'filt': self.filter_command_handler,
             }
         
         current_handler = handler_dict[self.mode]
@@ -138,6 +146,13 @@ class CommandParser():
         """
         self.mode = 'inbox'
         return remaining_command    
+    
+    def switch_to_filter_mode(self, remaining_command=''):
+        """
+        Switch into filter mode
+        """
+        self.mode = 'filt'
+        return remaining_command
 
     def switch_to_main_mode(self, remaining_command=''):
         """

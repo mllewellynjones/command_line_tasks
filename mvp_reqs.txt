@@ -1,4 +1,4 @@
-etting to the MVP
+Getting to the MVP
 - Subtasks and sub-projects
 - The ability to close tasks/projects from the command line
 - Filters
